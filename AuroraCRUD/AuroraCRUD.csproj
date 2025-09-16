@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!-- NuGet metadata -->
+		<PackageId>Aurora.Info.Library</PackageId>
+		<Version>1.0.2</Version>
+		<Authors>Nwenar I. Abbas</Authors>
+		<Company>Aurora Info</Company>
+		<Description>Helps you making CRUD and real-time data updating EASY!</Description>
+
+		<!-- Auto-generate NuGet package on build -->
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<!-- Custom target: copy generated NuGet package to local feed -->
+	<Target Name="CopyPackageToLocalFeed" AfterTargets="GenerateNuspec" Condition="'$(Configuration)' == 'Release'">
+		<ItemGroup>
+			<!-- Use $(PackageOutputPath) instead of $(OutputPath) -->
+			<GeneratedPackages Include="$(PackageOutputPath)\$(PackageId).$(Version).nupkg" />
+		</ItemGroup>
+
+		<Message Importance="high" Text="Copying @(GeneratedPackages) to C:\Users\Aurora\source\localnuget" />
+
+		<Copy SourceFiles="@(GeneratedPackages)" DestinationFolder="C:\Users\Aurora\source\localnuget" SkipUnchangedFiles="true" />
+	</Target>
+	<ItemGroup>
+	  <PackageReference Include="Dapper" Version="2.1.66" />
+	  <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+	</ItemGroup>
+
+</Project>
