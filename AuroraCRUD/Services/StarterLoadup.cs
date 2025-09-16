@@ -9,7 +9,7 @@ namespace AuroraCRUD.Services
 {
     public static class StarterLoadup
     {
-        public static async Task LoadDataAsync<T>()
+        public static async Task LoadDataAsync<T>(T instance)
         {
             var properties = typeof(T)
                 .GetProperties()
@@ -58,7 +58,7 @@ namespace AuroraCRUD.Services
                 var obsCollection = Activator.CreateInstance(typeof(ObservableCollection<>).MakeGenericType(innerType), result);
 
                 // Set the ObservableCollection to the property
-                prop.SetValue(this, obsCollection);
+                prop.SetValue(instance, obsCollection);
             }
         }
     }
