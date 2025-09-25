@@ -5,30 +5,30 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Diagnostics;
 
+using static AuroraCRUD.Services.ConnectionService;
 namespace AuroraCRUD.services
 {
     public class QueryNotifier
     {
         bool _isListening = false;
-        SqlConnection SqlConnection;
-        private readonly string TableName;
+        internal readonly string TableName;
         private readonly string[] Columns;
         private long _lastChangeVersion = 0;
         public event EventHandler<ChangeTrackingModel>? Changed;
-        public QueryNotifier(SqlConnection _con, string _tableName, string[] columns)
+        internal readonly Type type;
+        public QueryNotifier(string _tableName, string[] columns, Type _type)
         {
-            this.SqlConnection = _con;
             this.TableName = _tableName;
             this.Columns = columns;
-            SqlDependency.Start(SqlConnection.ConnectionString);
+            this.type = _type;
+            if (sqlConnection != null)
+                SqlDependency.Start(sqlConnection.ConnectionString);
         }
 
         public async Task InitializeChangeTracking()
         {
             try
             {
-                if (SqlConnection.State != ConnectionState.Open)
-                    await SqlConnection.OpenAsync();
 
                 // Get the current change version to start from
                 string query = @"
@@ -38,7 +38,7 @@ FROM CHANGETABLE(CHANGES dbo.{TableName}, 0) AS CT;";
 
                 query = query.Replace("{TableName}", TableName);
 
-                using var command = new SqlCommand(query, SqlConnection);
+                using var command = new SqlCommand(query, sqlConnection);
                 var result = await command.ExecuteScalarAsync();
 
                 if (result != null && result != DBNull.Value)
@@ -67,10 +67,9 @@ FROM CHANGETABLE(CHANGES dbo.{TableName}, 0) AS CT;";
                                FROM dbo.{TableName}";
             try
             {
-                if (SqlConnection.State != ConnectionState.Open)
-                    await SqlConnection.OpenAsync();
 
-                SqlCommand _command = new SqlCommand(query, SqlConnection);
+
+                SqlCommand _command = new SqlCommand(query, sqlConnection);
                 _command.Notification = null;
 
                 SqlDependency _dependency = new SqlDependency(_command);
@@ -107,8 +106,7 @@ FROM CHANGETABLE(CHANGES dbo.{TableName}, 0) AS CT;";
         {
             try
             {
-                if (SqlConnection.State != ConnectionState.Open)
-                    await SqlConnection.OpenAsync();
+
                 string query = @"
 SELECT 
     CT.SYS_CHANGE_VERSION AS ChangeVersion,
@@ -120,7 +118,7 @@ ORDER BY CT.SYS_CHANGE_VERSION ASC";
 
                 query = query.Replace("{TableName}", TableName);
 
-                using var command = new SqlCommand(query, SqlConnection);
+                using var command = new SqlCommand(query, sqlConnection);
                 command.Parameters.Add("@lastChangeVersion", SqlDbType.BigInt).Value = _lastChangeVersion;
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -139,6 +137,7 @@ ORDER BY CT.SYS_CHANGE_VERSION ASC";
                         Operation = operation,
                         Id = id,
                         TableName = TableName,
+                        modelType = this.type
                     };
 
                     Changed?.Invoke(null, changeModel);

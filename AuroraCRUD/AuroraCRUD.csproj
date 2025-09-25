@@ -7,7 +7,7 @@
 
 		<!-- NuGet metadata -->
 		<PackageId>Aurora.Info.Library</PackageId>
-		<Version>1.0.2</Version>
+		<Version>1.6.0</Version>
 		<Authors>Nwenar I. Abbas</Authors>
 		<Company>Aurora Info</Company>
 		<Description>Helps you making CRUD and real-time data updating EASY!</Description>

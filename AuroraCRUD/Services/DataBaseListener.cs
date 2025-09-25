@@ -1,43 +1,44 @@
-﻿using AuroraCRUD.Attributes;
+﻿
 using AuroraCRUD.services;
 using AuroraCRUD.Services.ModelService;
 
-using Microsoft.Data.SqlClient;
-
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Reflection;
 
+using static Aurora.Reflections.CoreReflections;
 namespace AuroraCRUD.Services
 {
-    public class DataBaseListener<T> where T : class
+    public class DataBaseListener
     {
+        public event EventHandler<(ChangeTrackingModel TrackingModel, dynamic? ChangedRow)>? TableChanged;
         private readonly List<QueryNotifier> TablesListenerList = new();
         private readonly ConcurrentQueue<ChangeTrackingModel> Queue = new();
         private readonly Dictionary<string, SemaphoreSlim> TableLocks = new();
         private readonly CancellationTokenSource cts = new();
         private bool isRunning = false;
-        private ObservableCollection<T> baseCollection;
-        public DataBaseListener(SqlConnection _connection, ObservableCollection<T> _baseCollection, string nameSpaceString)
+        public void EnqueueTable(Type modelType)
         {
-            foreach (var item in TableInfos(nameSpaceString))
+            foreach (var item in TableInfo(modelType))
             {
                 string[] columns = item.columns.ToArray();
-                TablesListenerList.Add(new QueryNotifier(_connection, item.tableName, columns));
+                TablesListenerList.Add(new QueryNotifier(item.tableName, columns, modelType));
             }
-            this.baseCollection = _baseCollection;
         }
 
         public async void StartListening()
         {
+            Logger.Log($"Listenning executed -- ");
             if (isRunning)
+            {
+                Logger.Log($"listener was already running returning...");
                 return;
+            }
             isRunning = true;
 
             foreach (var item in TablesListenerList)
             {
+                Logger.Log($"initiating Lisenter for {item.TableName}");
                 await item.InitializeChangeTracking();
+                Logger.Log($"Starting Listening");
                 await item.StartListening();
                 item.Changed += Item_Changed;
             }
@@ -47,12 +48,13 @@ namespace AuroraCRUD.Services
 
         private void Item_Changed(object? sender, ChangeTrackingModel e)
         {
+            Logger.Log($"item changed {e.TableName} {e.Id}");
             Queue.Enqueue(e);
-            Debug.WriteLine(e.TableName + "  " + e.Id + "  " + e.Operation);
         }
 
         private async Task ProcessTheChangeLoop()
         {
+            Logger.Log($"processing the change loop");
             while (!cts.Token.IsCancellationRequested)
             {
                 if (Queue.TryDequeue(out var ctModel))
@@ -62,11 +64,11 @@ namespace AuroraCRUD.Services
                         await ProcessChange(ctModel);
                     } catch (Exception ex)
                     {
-                        Debug.WriteLine($"Error processing change for table {ctModel.TableName}: {ex.Message}");
+                        Logger.Log($"Error processing change for table {ctModel.TableName}: {ex.Message}", logStatus.error);
                     }
                 } else
                 {
-                    await Task.Delay(50, cts.Token); // prevent tight loop
+                    await Task.Delay(50, cts.Token);
                 }
             }
         }
@@ -79,130 +81,56 @@ namespace AuroraCRUD.Services
             await TableLocks[ctModel.TableName].WaitAsync();
             try
             {
-                switch (ctModel.Operation)
-                {
-                    case "I": // Insert
-                        await HandleInsertOperation(ctModel, typeof(T));
-                        break;
-                    case "U": // Update
-                        await HandleUpdateOperation(ctModel, typeof(T));
-                        break;
-                    case "D": // Delete
-                        HandleDeleteOperation(ctModel);
-                        break;
-                }
+                Logger.Log($"processing changes for {ctModel.TableName}");
+                var dyn = await GetTheChangedItem(ctModel);
+
+                TableChanged?.Invoke(this, (ctModel, dyn));
+
             } finally
             {
                 TableLocks[ctModel.TableName].Release();
             }
         }
 
-        private async Task HandleInsertOperation(ChangeTrackingModel ctModel, Type modelType)
+        private async Task<object?> GetTheChangedItem(ChangeTrackingModel ctModel)
         {
-            try
-            {
-                dynamic? dynamicTask = await getTheItem(ctModel, modelType);
-                if (dynamicTask == null)
-                {
-                    return;
-                }
-                var insertedItem = dynamicTask.Result;
-
-                if (insertedItem != null)
-                {
-                    baseCollection.Insert(0, insertedItem);
-                }
-            } catch
-            {
-
-            }
-        }
-
-        private async Task HandleUpdateOperation(ChangeTrackingModel ctModel, Type modelType)
-        {
-            try
-            {
-                dynamic? dynamicTask = await getTheItem(ctModel, modelType);
-                if (dynamicTask == null)
-                {
-                    return;
-                }
-                var updatedItem = dynamicTask.Result;
-                if (updatedItem != null)
-                {
-                    var existing = baseCollection.FirstOrDefault(x =>
-                     x != null &&
-                    (int?)x.GetType()?.GetProperty("id")?.GetValue(x) == ctModel.Id);
-
-                    if (existing != null)
-                    {
-                        int index = baseCollection.IndexOf(existing);
-                        baseCollection.Remove(existing);
-                        baseCollection.Insert(index, updatedItem);
-                    }
-                }
-            } catch
-            {
-            }
-        }
-
-        private async Task<dynamic?> getTheItem(ChangeTrackingModel ctModel, Type modelType)
-        {
+            Logger.Log($"getting the changed Items");
+            Type modelType = ctModel.modelType;
             if (ctModel == null || modelType == null)
-                return null;
-            var method = typeof(DataBaseService)?.GetMethod("GetSingleRowAsync");
-            if (method == null)
-                return null;
-
-            var genericMethod = method.MakeGenericMethod(modelType);
-            var task = genericMethod.Invoke(null, new object[] { ctModel.TableName, ctModel.Id }) as Task;
-
-            if (task == null)
-                return null;
-
-            await task.ConfigureAwait(false);
-
-            // Use dynamic but with null checks
-            dynamic dynamicTask = task;
-            return dynamicTask;
-        }
-
-        private void HandleDeleteOperation(ChangeTrackingModel ctModel)
-        {
-            var existing = baseCollection.FirstOrDefault(x =>
-                 x != null &&
-                (int?)x.GetType()?.GetProperty("id")?.GetValue(x) == ctModel.Id);
-            if (existing != null)
             {
-                baseCollection.Remove(existing);
-            }
-        }
-
-        public static List<(string tableName, List<string> columns)> TableInfos(string nameSpaceString)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var modelProperties = new List<(string, List<string>)>();
-
-            var types = assembly.GetTypes()
-                .Where(t => t.IsClass && t.Namespace == nameSpaceString);
-            // "AuroraMarketDesktop.Models" is name space of the models
-
-            foreach (var type in types)
-            {
-                var attr = type.GetCustomAttribute<TableIdentifier>();
-                var tableName = attr?.Name ?? type.Name;
-
-                var properties = type.GetProperties()
-                    .Where(p => p.CanRead &&
-                                p.GetMethod?.IsPublic == true &&
-                                !Attribute.IsDefined(p, typeof(NotColumn)))
-                    .Select(p => p.Name)
-                    .ToList();
-
-                modelProperties.Add((tableName, properties));
+                Logger.Log($"either the ctModel or Model Type was null", logStatus.error);
+                return null;
             }
 
-            return modelProperties;
+            try
+            {
+                var method = typeof(DataBaseService).GetMethod("GetSingleRowAsync");
+                if (method == null)
+                {
+                    Logger.Log($"the method \"GetSingleRowAsync\" was null", logStatus.error);
+                    return null;
+                }
+
+                var genericMethod = method.MakeGenericMethod(modelType);
+
+                var task = (Task)genericMethod.Invoke(null, new object[] { ctModel.TableName, ctModel.Id });
+
+                if (task == null)
+                {
+                    Logger.Log($"task was null", logStatus.error);
+                    return null;
+                }
+
+                await task.ConfigureAwait(false);
+
+                // Get the result safely
+                var resultProperty = task.GetType().GetProperty("Result");
+                return resultProperty?.GetValue(task);
+            } catch (Exception ex)
+            {
+                Logger.Log($"Error getting changed item: {ex.Message}", logStatus.error);
+                return null;
+            }
         }
 
         public void StopListening()

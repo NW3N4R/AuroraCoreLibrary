@@ -32,15 +32,18 @@ namespace AuroraCRUD.Services
                     var innerType = propType.GetGenericArguments()[0];
 
                     // Call DataBaseService.GetDataAsync<T>(tableName) dynamically
-                    var method = typeof(DataBaseService)?
+                    MethodInfo? method = typeof(DataBaseService)?
                         .GetMethod("GetDataAsync")?
                         .MakeGenericMethod(innerType);
 
-                    Task task = (Task)method?.Invoke(null, null);
-                    await task;
+
+                    Task? task = (Task)method?.Invoke(null, null);
+                    if (task != null)
+                        await task;
                     // Convert Task<T> to Task<object> for awaiting later
                     var boxedTask = task?.ContinueWith(t => ((dynamic)t).Result as object);
-                    tasks.Add(prop, boxedTask);
+                    if (boxedTask != null)
+                        tasks.Add(prop, boxedTask);
                 }
             }
 
