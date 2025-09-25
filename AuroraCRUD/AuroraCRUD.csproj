@@ -7,13 +7,14 @@
 
 		<!-- NuGet metadata -->
 		<PackageId>Aurora.Info.Library</PackageId>
-		<Version>1.6.0</Version>
+		<Version>1.6.1</Version>
 		<Authors>Nwenar I. Abbas</Authors>
 		<Company>Aurora Info</Company>
 		<Description>Helps you making CRUD and real-time data updating EASY!</Description>
 
 		<!-- Auto-generate NuGet package on build -->
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageIcon>2023_03_06_12_05_IMG_2313.JPG</PackageIcon>
 	</PropertyGroup>
 
 	<!-- Custom target: copy generated NuGet package to local feed -->
@@ -27,6 +28,12 @@
 
 		<Copy SourceFiles="@(GeneratedPackages)" DestinationFolder="C:\Users\Aurora\source\localnuget" SkipUnchangedFiles="true" />
 	</Target>
+	<ItemGroup>
+	  <None Include="D:\Others\2023_03_06_12_05_IMG_2313.JPG">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="Dapper" Version="2.1.66" />
 	  <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
