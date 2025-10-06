@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11018.127 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuroraCRUD", "AuroraCRUD\AuroraCRUD.csproj", "{0A52B9DB-D7CF-4AF4-B52D-7A9B28D6F975}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinUiCore", "WinUiCore\WinUiCore.csproj", "{A55852B6-45AD-4BB9-9870-E1C0F39EA920}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{0A52B9DB-D7CF-4AF4-B52D-7A9B28D6F975}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A52B9DB-D7CF-4AF4-B52D-7A9B28D6F975}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A52B9DB-D7CF-4AF4-B52D-7A9B28D6F975}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A55852B6-45AD-4BB9-9870-E1C0F39EA920}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A55852B6-45AD-4BB9-9870-E1C0F39EA920}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A55852B6-45AD-4BB9-9870-E1C0F39EA920}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A55852B6-45AD-4BB9-9870-E1C0F39EA920}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

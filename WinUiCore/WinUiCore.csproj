@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>WinUiCore</RootNamespace>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <UseWinUI>true</UseWinUI>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <PackageId>WinUiCore</PackageId>
+	  <Version>1.0.3</Version>
+	  <Authors>Nwenar I. Abbas</Authors>
+	  <Company>Aurora Info</Company>
+	  <Description>Reusable WinUI controls and helpers.</Description>
+  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<!-- 📦 After building, copy the .nupkg to your local source folder -->
+	<Target Name="CopyNuGetPackage" AfterTargets="Pack" Condition="'$(Configuration)'=='Release'">
+		<PropertyGroup>
+			<LocalNuGetPath>C:\Users\Aurora\source\localnuget</LocalNuGetPath>
+			<PackageFileName>$(PackageId).$(Version).nupkg</PackageFileName>
+		</PropertyGroup>
+
+		<!-- Ensure destination folder exists -->
+		<MakeDir Directories="$(LocalNuGetPath)" Condition="!Exists('$(LocalNuGetPath)')" />
+
+		<!-- 🧹 Delete old versions from localNuGet -->
+		<ItemGroup>
+			<OldLocalPackages Include="$(LocalNuGetPath)\$(PackageId).*nupkg" />
+		</ItemGroup>
+		<Delete Files="@(OldLocalPackages)" ContinueOnError="true" />
+
+		<!-- 🧹 Optional: Clean old versions from bin\Release -->
+		<ItemGroup>
+			<OldBinPackages Include="$(PackageOutputPath)\$(PackageId).*nupkg" Exclude="$(PackageOutputPath)\$(PackageFileName)" />
+		</ItemGroup>
+		<Delete Files="@(OldBinPackages)" ContinueOnError="true" />
+
+		<!-- 📦 Copy only the current version -->
+		<Copy
+		  SourceFiles="$(PackageOutputPath)\$(PackageFileName)"
+		  DestinationFolder="$(LocalNuGetPath)"
+		  SkipUnchangedFiles="true" />
+	</Target>
+
+	<ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6584" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.250916003" />
+  </ItemGroup>
+  
+</Project>
