@@ -7,7 +7,7 @@
 
 		<!-- NuGet metadata -->
 		<PackageId>Aurora.Info.Library</PackageId>
-		<Version>1.6.1</Version>
+		<Version>1.6.7</Version>
 		<Authors>Nwenar I. Abbas</Authors>
 		<Company>Aurora Info</Company>
 		<Description>Helps you making CRUD and real-time data updating EASY!</Description>
@@ -15,6 +15,7 @@
 		<!-- Auto-generate NuGet package on build -->
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageIcon>2023_03_06_12_05_IMG_2313.JPG</PackageIcon>
+		<ApplicationIcon>Aurora Ico.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<!-- Custom target: copy generated NuGet package to local feed -->
@@ -28,6 +29,9 @@
 
 		<Copy SourceFiles="@(GeneratedPackages)" DestinationFolder="C:\Users\Aurora\source\localnuget" SkipUnchangedFiles="true" />
 	</Target>
+	<ItemGroup>
+	  <Content Include="Aurora Ico.ico" />
+	</ItemGroup>
 	<ItemGroup>
 	  <None Include="D:\Others\2023_03_06_12_05_IMG_2313.JPG">
 	    <Pack>True</Pack>

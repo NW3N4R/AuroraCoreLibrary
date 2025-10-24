@@ -11,6 +11,7 @@
 	  <Authors>Nwenar I. Abbas</Authors>
 	  <Company>Aurora Info</Company>
 	  <Description>Reusable WinUI controls and helpers.</Description>
+	  <ApplicationIcon>Aurora Ico.ico</ApplicationIcon>
   </PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -39,11 +40,17 @@
 		<Delete Files="@(OldBinPackages)" ContinueOnError="true" />
 
 		<!-- 📦 Copy only the current version -->
-		<Copy
-		  SourceFiles="$(PackageOutputPath)\$(PackageFileName)"
-		  DestinationFolder="$(LocalNuGetPath)"
-		  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(PackageOutputPath)\$(PackageFileName)" DestinationFolder="$(LocalNuGetPath)" SkipUnchangedFiles="true" />
 	</Target>
+	<ItemGroup>
+	  <Content Include="Aurora Ico.ico" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="D:\Others\2023_03_06_12_05_IMG_2313.JPG" Link="2023_03_06_12_05_IMG_2313.JPG">
+	    <PackagePath>\</PackagePath>
+	    <Pack>True</Pack>
+	  </None>
+	</ItemGroup>
 
 	<ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6584" />

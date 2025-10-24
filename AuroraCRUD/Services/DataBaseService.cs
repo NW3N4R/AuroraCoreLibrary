@@ -250,7 +250,7 @@ namespace AuroraCRUD.Services
             }
         }
 
-        public static async Task<int> ExecuteStoredProcedure(string procedureName, Dictionary<string, object> parameters)
+        public static async Task<object[]> ExecuteStoredProcedure(string procedureName, Dictionary<string, object> parameters, string[] outputParameters = null)
         {
             try
             {
@@ -263,14 +263,32 @@ namespace AuroraCRUD.Services
                     {
                         command.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                     }
-
-                    // Execute the command and get the SCOPE_IDENTITY() if needed (useful for insert operations)
-                    int result = Convert.ToInt32(await command.ExecuteScalarAsync());
-                    return result;
+                    if (outputParameters != null)
+                    {
+                        foreach (var outParam in outputParameters)
+                        {
+                            SqlParameter outputParam = new SqlParameter(outParam, SqlDbType.Int)
+                            {
+                                Direction = ParameterDirection.Output
+                            };
+                            command.Parameters.Add(outputParam);
+                        }
+                    }
+                    await command.ExecuteNonQueryAsync();
+                    if (outputParameters != null)
+                    {
+                        object[] results = new object[outputParameters.Length];
+                        for (int i = 0; i < outputParameters.Length; i++)
+                        {
+                            results[i] = command.Parameters[outputParameters[i]].Value;
+                        }
+                        return results;
+                    }
+                    return [];
                 }
             } catch (Exception)
             {
-                return 0;
+                return [];
             }
         }
 
